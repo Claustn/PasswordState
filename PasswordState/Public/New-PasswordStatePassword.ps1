@@ -147,6 +147,9 @@ function New-PasswordStatePassword
   if ($PSBoundParameters.ContainsKey('Notes')) {
     $request | Add-Member -MemberType NoteProperty -Name Notes -Value $Notes
   }
+  if ($PSBoundParameters.ContainsKey('ExpiryDate')) {
+    $request | Add-Member -MemberType NoteProperty -Name ExpiryDate -Value $ExpiryDate
+  }
   if ($PSBoundParameters.ContainsKey('AccountTypeID')) {
     $request | Add-Member -MemberType NoteProperty -Name AccountTypeID -Value $AccountTypeID
   }
@@ -172,15 +175,17 @@ function New-PasswordStatePassword
   $json = ConvertTo-Json -InputObject $request
 
   Write-Verbose -Message $json
+  Write-Verbose $Uri
 
   $Output = @()
+  $DocumentInfo = @()
 
   If ($DocumentPath) {
     $DocumentInfo = "Upload Document.`nDocumentPath : $DocumentPath`nDocumentName : $DocumentName`nDocument Description : $DocumentDescription"
   }
 
   If ($PSCmdlet.ShouldProcess("Creating new password entry: $Title `n$json`n$DocumentInfo")) {
-    $result = Invoke-RestMethod -Uri $uri -Method Post -ContentType "application/$Format" -Headers $headers -Body $json
+    $result = Invoke-RestMethod -Uri $uri -Method Post -ContentType "application/$Format" -Headers $headers -Body  ([System.Text.Encoding]::UTF8.GetBytes($json))
     $Output += $result
     
     If ($DocumentPath) {
