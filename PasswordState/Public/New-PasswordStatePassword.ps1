@@ -15,35 +15,35 @@
     limitations under the License.
 #>
 
-function New-PasswordStatePassword 
-{    
-  [cmdletbinding(SupportsShouldProcess = $true)]
-  param(
-    [parameter(Mandatory)]
-    [pscredential]$ApiKey,
+function New-PasswordStatePassword {
+    [Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSAvoidUsingUserNameAndPassWordParams', '')]
+    [cmdletbinding(SupportsShouldProcess = $true)]
+    param(
+        [parameter(Mandatory)]
+        [pscredential]$ApiKey,
 
-    [parameter(Mandatory)]
-    [int]$PasswordListId,
+        [parameter(Mandatory)]
+        [int]$PasswordListId,
 
-    [string]$Endpoint = (_GetDefault -Option 'api_endpoint'),
+        [string]$Endpoint = (_GetDefault -Option 'api_endpoint'),
 
-    [ValidateSet('json','xml')]
-    [string]$Format = 'json',
+        [ValidateSet('json','xml')]
+        [string]$Format = 'json',
 
-    [Parameter(Mandatory)]
-    [string]$Title,
+        [Parameter(Mandatory)]
+        [string]$Title,
 
-    [Parameter(Mandatory = $true,ParameterSetName = 'UsePassword')]
-    [Parameter(Mandatory = $true,ParameterSetName = 'UsePasswordWithFile')]
-    [securestring]$Password,
+        [Parameter(Mandatory = $true,ParameterSetName = 'UsePassword')]
+        [Parameter(Mandatory = $true,ParameterSetName = 'UsePasswordWithFile')]
+        [securestring]$Password,
 
-    [string]$Username,
+        [string]$Username,
 
-    [string]$Description,
+        [string]$Description,
 
-    [string]$GenericField1,
-        
-    [string]$GenericField2,
+        [string]$GenericField1,
+            
+        [string]$GenericField2,
 
     [string]$GenericField3,
 
@@ -192,10 +192,23 @@ function New-PasswordStatePassword
       $uri = "$Endpoint/document/password/$($result.PasswordID)?DocumentName=$([System.Web.HttpUtility]::UrlEncode($DocumentName))&DocumentDescription=$([System.Web.HttpUtility]::UrlEncode($DocumentDescription))"
       Write-Verbose  -Message $uri 
 
-      $result = Invoke-RestMethod -Uri $uri -Method Post -InFile $DocumentPath -ContentType 'multipart/form-data' -Headers $headers 
-      $Output += $result
-      
-      return $Output
+
+    $documentInfo = $null
+    if ($DocumentPath) {
+        $DocumentInfo = "Upload Document.`nDocumentPath : $DocumentPath`nDocumentName : $DocumentName`nDocument Description : $DocumentDescription"
     }
-  }
+
+    if ($PSCmdlet.ShouldProcess("Creating new password entry: $Title `n$json`n$DocumentInfo")) {
+        $result = Invoke-RestMethod -Uri $uri -Method Post -ContentType "application/$Format" -Headers $headers -Body $json
+        $output += $result
+    
+        if ($DocumentPath) {
+            $uri = "$Endpoint/document/password/$($result.PasswordID)?DocumentName=$([System.Web.HttpUtility]::UrlEncode($DocumentName))&DocumentDescription=$([System.Web.HttpUtility]::UrlEncode($DocumentDescription))"
+            Write-Verbose -Message $uri 
+
+            $result = Invoke-RestMethod -Uri $uri -Method Post -InFile $DocumentPath -ContentType 'multipart/form-data' -Headers $headers 
+            $output += $result    
+        }
+        return $output
+    }
 }
